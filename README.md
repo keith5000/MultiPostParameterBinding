@@ -20,7 +20,11 @@ You can work around this limitation by include this repository's code in your pr
 [HttpPost, MultiPostParameters]
 public string DoSomething(CustomType param1, CustomType param2, string param3) { ... }
 ```
-3) Clients pass the parameters as properties of an object. An example JSON object would be:
+3) Add this line in Global.asax.cs to the Application_Start method *before* the call to `GlobalConfiguration.Configure(WebApiConfig.Register)`:
+```
+GlobalConfiguration.Configuration.ParameterBindingRules.Insert(0, MultiPostParameterBinding.CreateBindingForMarkedParameters);
+```
+4) Clients pass the parameters as properties of an object. An example JSON object would be:
 ```
 { param1:{ Text: x }, param2:{ Text: y }, param3:z }
 ```
