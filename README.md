@@ -29,7 +29,7 @@ public string DoSomethingElse(string param1, int param2) { ... }
 ```
 GlobalConfiguration.Configuration.ParameterBindingRules.Insert(0, MultiPostParameterBinding.CreateBindingForMarkedParameters);
 ```
-4) Clients pass the parameters as properties of an object. An example JSON object would be:
+4) Have your clients pass the parameters as properties of an object. An example JSON object for the `DoSomething(param1, param2, param3)` method is:
 ```
 { param1:{ Text:"" }, param2:{ Text:"" }, param3:"" }
 ```
@@ -46,7 +46,7 @@ $.ajax({
 ## What is supported
 - The method's parameters can be of any primitive or complex type, including your custom objects, and in any order.
 - The method must allow HTTP POST or PUT.
-- Tested only (and not thoroughly) against .NET Web API 2 with .NET 4.5
+- Tested only (and not thoroughly) against .NET Web API 2 with .NET 4.5.
 
 ## Bugs?
 This project is in beta. The code has not been fully tested. Please let me know of any issues.
