@@ -1,0 +1,28 @@
+﻿<h1>JQuery Example</h1>
+
+<p>
+	Result from API method: <span id="spnResult" style="font-weight: bold;">...</span>
+</p>
+
+<script type="text/javascript">
+	$(function () {
+		
+		// This example calls the API method SampleApiController.DoSomething. Each parameter is specified
+		// as a property in a JSON object. The result of the method is displayed in the browser.
+		$.ajax({
+			data: JSON.stringify({ param1: { Text: "param1" }, param2: { Text: "param2" }, param3: "param3" }),
+			url: "/api/SampleApi/DoSomething",
+			contentType: "application/json", method: "POST", processData: false
+		})
+		.success(function (result) {
+			console.log("API method succeeded");
+			$("#spnResult").text(result);
+		})
+		.fail(function (response) {
+			console.error("API method error: " + response.responseText);
+			console.error(response);
+			$("#spnResult").text("An error occurred. See console for details.");
+		});
+
+	});
+</script>
