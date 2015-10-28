@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Diagnostics.Contracts;
-using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
+using System.Web.Http;
 using System.Web.Http.Controllers;
 using System.Web.Http.Metadata;
 using Newtonsoft.Json;
@@ -33,8 +31,11 @@ namespace Keith5000.ModelBinding
 	///		{ param1: {...}, param2: {...}, param3: "..." }
 	///		
 	/// or an encoded query string:
-	///		param1=...&param2=...&param3=...
+	///		param1=...&amp;param2=...&amp;param3=...
 	///		
+	/// To use this class, add the following line to Global.asax.cs in Application_Start before the call to GlobalConfiguration.Configure(WebApiConfig.Register):
+	///		GlobalConfiguration.Configuration.ParameterBindingRules.Insert(0, MultiPostParameterBinding.CreateBindingForMarkedParameters);
+	/// 
 	/// This class is based on a similar implementation from https://github.com/RoyiNamir/SimplePostVariableParameterBindingExtended
 	/// (also based on Rick Strahl's SimplePostVariableParameterBinding class) which only supported simple types.
 	/// </remarks>
@@ -80,10 +81,13 @@ namespace Keith5000.ModelBinding
 				object paramValue;
 				if (Descriptor.ParameterType == typeof(string))
 					paramValue = stringValue;
+				else if (Descriptor.ParameterType.IsEnum)
+					paramValue = Enum.Parse(Descriptor.ParameterType, stringValue);
 				else if (Descriptor.ParameterType.IsPrimitive || Descriptor.ParameterType.IsValueType)	// TODO: Are these conditions ok? I'd rather not have to check that the type implements IConvertible.
 					paramValue = Convert.ChangeType(stringValue, Descriptor.ParameterType);
 				else
-					paramValue = JsonConvert.DeserializeObject(stringValue, Descriptor.ParameterType);
+					// when deserializing an object, pass in the global settings so that custom converters, etc. are honored
+					paramValue = JsonConvert.DeserializeObject(stringValue, Descriptor.ParameterType, GlobalConfiguration.Configuration.Formatters.JsonFormatter.SerializerSettings);
 
 				// Set the binding result here
 				SetValue(actionContext, paramValue);
@@ -148,12 +152,14 @@ namespace Keith5000.ModelBinding
 		/// </summary>
 		/// <param name="descriptor"></param>
 		/// <returns></returns>
+		/// <remarks>
+		/// Call this method in Global.asax.cs in Application_Start before the call to GlobalConfiguration.Configure(WebApiConfig.Register):
+		///		GlobalConfiguration.Configuration.ParameterBindingRules.Insert(0, MultiPostParameterBinding.CreateBindingForMarkedParameters);
+		/// </remarks>
 		public static MultiPostParameterBinding CreateBindingForMarkedParameters(HttpParameterDescriptor descriptor)
 		{
-			Contract.Requires(descriptor != null);
-
 			// short circuit if action does not have this attribute
-			if (!descriptor.ActionDescriptor.GetCustomAttributes<MultiPostParametersAttribute>().Any())
+			if (!descriptor.ActionDescriptor.GetCustomAttributes<MultiPostParametersAttribute>().Any(x => x.Enabled))
 				return null;
 
 			// Only apply this binder on POST and PUT operations
